@@ -4,54 +4,55 @@ import (
 	"CS1_ToDoApp/database"
 	"CS1_ToDoApp/models"
 	"database/sql"
-	"github.com/gin-gonic/gin"
-	_ "log"
+	"encoding/json"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
-	_ "time"
 )
 
-func GetAllTasks(c *gin.Context) {
+func GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	var tasks []models.Task
 	rows, err := database.Db.Query("SELECT task_id, task, completed, created_at, updated_at FROM task")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cann't get all task"})
+		logrus.Error("Cann't get all task: ", err)
+		http.Error(w, "Can't get all tasks", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		var task models.Task
 		if err := rows.Scan(&task.ID, &task.Task, &task.Completed, &task.CreatedAt, &task.UpdatedAt); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error when getting all task"})
+			http.Error(w, "Error when getting all tasks", http.StatusInternalServerError)
 			return
 		}
 		tasks = append(tasks, task)
 	}
 
-	c.JSON(http.StatusOK, tasks)
+	json.NewEncoder(w).Encode(tasks)
 
 }
 
-func GetTaskByID(c *gin.Context) {
-	id := c.Param("id")
+func GetTaskByID(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Path[len("/tasks/"):]
 	var task models.Task
 	row := database.Db.QueryRow("SELECT task_id, task, completed, created_at, updated_at FROM task WHERE task_id = $1", id)
 	if err := row.Scan(&task.ID, &task.Task, &task.Completed, &task.CreatedAt, &task.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+			http.Error(w, "Task not found", http.StatusNotFound)
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error querying task", "details": err.Error()})
+			http.Error(w, "Error querying task", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, task)
+	json.NewEncoder(w).Encode(task)
 }
 
-func CreateNewTask(c *gin.Context) {
+func CreateNewTask(w http.ResponseWriter, r *http.Request) {
 	var task models.Task
-	if err := c.ShouldBindJSON(&task); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format", "details": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
 
@@ -62,29 +63,30 @@ func CreateNewTask(c *gin.Context) {
 	err := database.Db.QueryRow(`INSERT INTO task(task, completed, created_at, updated_at)
 		VALUES($1, $2, $3, $4) RETURNING task_id`, task.Task, task.Completed, task.CreatedAt, task.UpdatedAt).Scan(&lastInsertID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cann't create task"})
+		http.Error(w, "Cann't create task", http.StatusInternalServerError)
 		return
 	}
 
 	task.ID = lastInsertID
-	c.JSON(http.StatusCreated, task)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(task)
 
 }
 
-func UpdateTask(c *gin.Context) {
-	id := c.Param("id")
+func UpdateTask(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Path[len("/tasks/"):]
 	var task models.Task
 	if err := database.Db.QueryRow("SELECT task_id, task, completed, created_at, updated_at FROM task WHERE task_id = $1", id).Scan(&task.ID, &task.Task, &task.Completed, &task.CreatedAt, &task.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+			http.Error(w, "Task not found", http.StatusNotFound)
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error querying task", "details": err.Error()})
+			http.Error(w, "Error querying task", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	if err := c.ShouldBindJSON(&task); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format", "details": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
 
@@ -93,26 +95,26 @@ func UpdateTask(c *gin.Context) {
 	_, err := database.Db.Exec(`UPDATE task SET task = $1, completed = $2, updated_at = $3 WHERE task_id = $4`,
 		task.Task, task.Completed, task.UpdatedAt, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cann't update task"})
+		http.Error(w, "Cann't update task", http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, task)
+	json.NewEncoder(w).Encode(task)
 }
 
-func DeleteTask(c *gin.Context) {
-	id := c.Param("id")
+func DeleteTask(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Path[len("/tasks/"):]
 	result, err := database.Db.Exec("DELETE FROM task WHERE task_id = $1", id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot remove task"})
+		http.Error(w, "Cann't remove task", http.StatusInternalServerError)
 		return
 	}
 
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		http.Error(w, "Task not found", http.StatusNotFound)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Task removed"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "Task removed"})
 }
