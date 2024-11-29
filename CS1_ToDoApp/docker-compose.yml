@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  go-app:
+    container_name: go-app
+    image: francescoxx/go-app:1.0.0
+    build: .
+    environment:
+      DATABASE_URL: "host=go-db user=postgres password=123321 dbname=todoApp sslmode=disable"
+    ports:
+      - "8888:8888"
+    depends_on:
+      - go-db
+
+  go-db:
+    container_name: go-db
+    image: postgres:12
+    environment:
+      POSTGRES_PASSWORD: 123321
+      POSTGRES_USER: postgres
+      POSTGRES_DB: todoApp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata: {}

@@ -37,7 +37,7 @@ func TestGetAllTasks(t *testing.T) {
 
 	// Set up router and routes
 	r := setupRouter()
-	r.GET("/tasks", GetAllTasks)
+	//r.GET("/tasks", GetAllTasks)
 
 	// Create test request
 	req, _ := http.NewRequest("GET", "/tasks", nil)
@@ -78,7 +78,7 @@ func TestGetTaskByID(t *testing.T) {
 
 	// Set up router and routes
 	r := setupRouter()
-	r.GET("/tasks/:id", GetTaskByID)
+	//r.GET("/tasks/:id", GetTaskByID)
 
 	// Create test request
 	req, _ := http.NewRequest("GET", "/tasks/1", nil)
@@ -115,7 +115,7 @@ func TestCreateNewTask(t *testing.T) {
 
 	// Set up router and routes
 	r := setupRouter()
-	r.POST("/tasks", CreateNewTask)
+	//r.POST("/tasks", CreateNewTask)
 
 	// Create test request
 	task := map[string]interface{}{
@@ -164,7 +164,7 @@ func TestUpdateTask(t *testing.T) {
 
 	// Set up router and routes
 	r := setupRouter()
-	r.PUT("/tasks/:id", UpdateTask)
+	//r.PUT("/tasks/:id", UpdateTask)
 
 	// Create test request
 	updateData := map[string]interface{}{
@@ -207,7 +207,7 @@ func TestDeleteTask(t *testing.T) {
 
 	// Set up router and routes
 	r := setupRouter()
-	r.DELETE("/tasks/:id", DeleteTask)
+	//r.DELETE("/tasks/:id", DeleteTask)
 
 	// Create test request
 	req, _ := http.NewRequest("DELETE", "/tasks/1", nil)
