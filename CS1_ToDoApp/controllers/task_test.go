@@ -6,18 +6,57 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 	"time"
 )
 
-func setupRouter() *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	return r
+func extractIDFromURL(path string) string {
+	// Simple regex to match /tasks/<id>
+	re := regexp.MustCompile(`/tasks/(\d+)`)
+	match := re.FindStringSubmatch(path)
+	if len(match) > 1 {
+		return match[1]
+	}
+	return ""
+}
+
+func setupRouter() http.Handler {
+	// Create a new ServeMux instance to avoid global route conflicts
+	mux := http.NewServeMux()
+
+	// Register routes
+	mux.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			GetAllTasks(w, r)
+		} else if r.Method == http.MethodPost {
+			CreateNewTask(w, r)
+		}
+	})
+
+	mux.HandleFunc("/tasks/", func(w http.ResponseWriter, r *http.Request) {
+		id := extractIDFromURL(r.URL.Path)
+
+		if id == "" {
+			http.Error(w, "Task ID is required", http.StatusBadRequest)
+			return
+		}
+
+		if r.Method == http.MethodGet {
+			GetTaskByID(w, r)
+		} else if r.Method == http.MethodPut {
+			UpdateTask(w, r)
+		} else if r.Method == http.MethodDelete {
+			DeleteTask(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	return mux
 }
 
 func TestGetAllTasks(t *testing.T) {
