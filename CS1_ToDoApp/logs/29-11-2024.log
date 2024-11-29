@@ -1,0 +1,4 @@
+{"body":null,"level":"info","method":"GET-request","msg":"","path":"/tasks","time":"2024-11-29T09:53:08+07:00"}
+{"body":"[{\"task_id\":3,\"task\":\"CRUD ToDoApp 1\",\"completed\":true,\"created_at\":\"2024-11-28T23:45:53.760001Z\",\"updated_at\":\"2024-11-28T23:46:46.135183Z\"}]","level":"info","method":"GET-response","msg":"","path":"/tasks","time":"2024-11-29T09:53:08+07:00"}
+{"body":null,"level":"info","method":"GET-request","msg":"","path":"/tasks/1","time":"2024-11-29T09:56:48+07:00"}
+{"body":"{\"error\":\"Task not found\"}","level":"error","method":"GET-response","msg":"","path":"/tasks/1","time":"2024-11-29T09:56:48+07:00"}
