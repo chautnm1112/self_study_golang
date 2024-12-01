@@ -10,9 +10,9 @@ services:
     ports:
       - "8888:8888"
     depends_on:
-      - go-db
+      - go-db-todoapp
 
-  go-db:
+  go-db-todoapp:
     container_name: go-db-todoapp
     image: postgres:latest
     environment:

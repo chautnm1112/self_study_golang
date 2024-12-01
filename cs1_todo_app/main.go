@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"cs1_todo_app/database"
 	"cs1_todo_app/routes"
+	"errors"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 var logger *zap.Logger
@@ -40,10 +45,41 @@ func main() {
 	r := routes.SetupRouter()
 
 	host := os.Getenv("HOST")
-	// Start the server
-	err = http.ListenAndServe(":"+host, r)
-	if err != nil {
-		// Log the error with zap
-		logger.Fatal("Can't run server", zap.Error(err))
+
+	server := &http.Server{
+		Addr:    ":" + host,
+		Handler: r,
 	}
+
+	timeWait := 15 * time.Second
+
+	signChan := make(chan os.Signal, 1)
+
+	go func() {
+		logger.Info("Starting server on :" + host)
+		// Start the server
+		if err := server.ListenAndServe(); err != nil && !errors.Is(http.ErrServerClosed, err) {
+			logger.Error("Could not listen on "+server.Addr+": ", zap.Error(err))
+		}
+	}()
+
+	signal.Notify(signChan, os.Interrupt, syscall.SIGTERM)
+	<-signChan
+
+	logger.Info("Shutting down")
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeWait)
+	defer func() {
+		logger.Info("Close another connection")
+		cancel()
+	}()
+
+	logger.Info("Stop http server")
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Fatal("Server forced to shutdown: ", zap.Error(err))
+	}
+
+	close(signChan)
+	logger.Info("Server stopped gracefully")
 }
