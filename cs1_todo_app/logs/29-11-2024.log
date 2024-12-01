@@ -34,3 +34,21 @@
 {"body":"Cann't remove task\n","level":"error","method":"DELETE-response","msg":"","path":"/tasks/5","time":"2024-11-29T16:42:32+07:00"}
 {"body":null,"level":"info","method":"DELETE-request","msg":"","path":"/tasks/5","time":"2024-11-29T16:43:16+07:00"}
 {"body":"{\"message\":\"Task removed\"}\n","level":"info","method":"DELETE-response","msg":"","path":"/tasks/5","time":"2024-11-29T16:43:16+07:00"}
+{"level":"info","ts":"2024-11-29T17:09:45.876+0700","msg":"Incoming request","method":"GET-request","path":"/tasks","body":null}
+{"level":"info","ts":"2024-11-29T17:09:45.878+0700","msg":"Successful response","method":"GET-response","path":"/tasks","body":"[{\"task_id\":3,\"task\":\"CRUD ToDoApp 1\",\"completed\":true,\"created_at\":\"2024-11-28T23:45:53.760001Z\",\"updated_at\":\"2024-11-28T23:46:46.135183Z\"}]\n"}
+{"level":"info","ts":"2024-11-29T17:10:09.211+0700","msg":"Incoming request","method":"GET-request","path":"/tasks/3","body":null}
+{"level":"info","ts":"2024-11-29T17:10:09.212+0700","msg":"Successful response","method":"GET-response","path":"/tasks/3","body":"{\"task_id\":3,\"task\":\"CRUD ToDoApp 1\",\"completed\":true,\"created_at\":\"2024-11-28T23:45:53.760001Z\",\"updated_at\":\"2024-11-28T23:46:46.135183Z\"}\n"}
+{"level":"info","ts":"2024-11-29T17:10:13.160+0700","msg":"Incoming request","method":"GET-request","path":"/tasks/5","body":null}
+{"level":"error","ts":"2024-11-29T17:10:13.161+0700","msg":"Error response","method":"GET-response","path":"/tasks/5","body":"Task not found\n"}
+{"level":"info","ts":"2024-11-29T17:14:18.237+0700","msg":"Incoming request","method":"GET-request","path":"/tasks/","body":null}
+{"level":"error","ts":"2024-11-29T17:14:18.238+0700","msg":"Error response","method":"GET-response","path":"/tasks/","body":"Task ID is required\n"}
+{"level":"info","ts":"2024-11-29T17:14:21.165+0700","msg":"Incoming request","method":"GET-request","path":"/tasks","body":null}
+{"level":"info","ts":"2024-11-29T17:14:21.167+0700","msg":"Successful response","method":"GET-response","path":"/tasks","body":"[{\"task_id\":3,\"task\":\"CRUD ToDoApp 1\",\"completed\":true,\"created_at\":\"2024-11-28T23:45:53.760001Z\",\"updated_at\":\"2024-11-28T23:46:46.135183Z\"}]\n"}
+{"level":"info","ts":"2024-11-29T17:52:45.712+0700","msg":"Incoming request","method":"GET-request","path":"/tasks","body":null}
+{"level":"info","ts":"2024-11-29T17:52:45.716+0700","msg":"Successful response","method":"GET-response","path":"/tasks","body":"[{\"task_id\":3,\"task\":\"CRUD ToDoApp 1\",\"completed\":true,\"created_at\":\"2024-11-28T23:45:53.760001Z\",\"updated_at\":\"2024-11-28T23:46:46.135183Z\"}]\n"}
+{"level":"info","ts":"2024-11-29T17:53:00.681+0700","msg":"Incoming request","method":"GET-request","path":"/tasks/5","body":null}
+{"level":"error","ts":"2024-11-29T17:53:00.684+0700","msg":"Error response","method":"GET-response","path":"/tasks/5","body":"Task not found\n"}
+{"level":"info","ts":"2024-11-29T17:53:07.150+0700","msg":"Incoming request","method":"GET-request","path":"/tasks/1","body":null}
+{"level":"error","ts":"2024-11-29T17:53:07.152+0700","msg":"Error response","method":"GET-response","path":"/tasks/1","body":"Task not found\n"}
+{"level":"info","ts":"2024-11-29T17:53:10.800+0700","msg":"Incoming request","method":"GET-request","path":"/tasks/3","body":null}
+{"level":"info","ts":"2024-11-29T17:53:10.800+0700","msg":"Successful response","method":"GET-response","path":"/tasks/3","body":"{\"task_id\":3,\"task\":\"CRUD ToDoApp 1\",\"completed\":true,\"created_at\":\"2024-11-28T23:45:53.760001Z\",\"updated_at\":\"2024-11-28T23:46:46.135183Z\"}\n"}

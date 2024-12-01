@@ -1,13 +1,13 @@
 package routes
 
 import (
-	"CS1_ToDoApp/controllers" // Import the application logic (controllers)
 	"bytes"
+	"cs1_todo_app/controllers"        // Import the application logic (controllers)
 	"encoding/json"                   // Handle JSON data
 	"github.com/natefinch/lumberjack" // Manage log files
-	"github.com/sirupsen/logrus"      // Powerful logging library
-	"io"                              // Handle input/output operations
-	"log"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"io" // Handle input/output operations
 	"net/http"
 	_ "net/http"
 	"os" // Interact with the file system
@@ -16,11 +16,47 @@ import (
 	"time" // Manage time and dates
 )
 
+var logger *zap.Logger
+
+func initLogger() {
+	// Get the current date for naming the log file
+	currentTime := time.Now()
+	formattedDate := currentTime.Format("02-01-2006") // Format: day-month-year
+
+	// Configure the lumberjack logger for file rotation
+	lumberjackLogger := &lumberjack.Logger{
+		Filename: "logs/" + formattedDate + ".log", // Log file named by date
+		MaxSize:  10,                               // Maximum file size (MB)
+		MaxAge:   7,                                // Retain logs for 7 days
+		Compress: true,                             // Compress older logs
+	}
+
+	// Create a WriteSyncer for both console and file
+	writerSyncer := zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumberjackLogger))
+
+	// Set the log level and format for the logger
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder // Use ISO8601 for timestamps
+
+	// Create a zapcore for logging
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderConfig), // JSON format for log entries
+		writerSyncer,
+		zapcore.InfoLevel, // Set the default log level
+	)
+
+	// Create the logger
+	logger = zap.New(core)
+
+	// Set the global logger
+	zap.ReplaceGlobals(logger)
+}
+
 func RecoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("Panic occurred: %v\nStack Trace: %s", r, debug.Stack())
+				logger.Error("Panic occurred", zap.Any("error", r), zap.ByteString("stack_trace", debug.Stack()))
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
 		}()
@@ -49,11 +85,9 @@ func LoggingRequestMiddleware(next http.Handler) http.Handler {
 			bodyJSON = nil
 		}
 
-		logrus.WithFields(logrus.Fields{
-			"method": r.Method + "-request",
-			"path":   r.URL.Path,
-			"body":   bodyJSON,
-		}).Info()
+		// Log the request using zap
+		logger.With(zap.String("method", r.Method+"-request"), zap.String("path", r.URL.Path)).
+			Info("Incoming request", zap.Any("body", bodyJSON))
 
 		// Call the next handler
 		next.ServeHTTP(w, r)
@@ -96,19 +130,13 @@ func LoggingResponseMiddleware(next http.Handler) http.Handler {
 		// Call the next handler
 		next.ServeHTTP(rw, r)
 
-		// Log the response
+		// Log the response using zap
 		if rw.statusCode < 400 {
-			logrus.WithFields(logrus.Fields{
-				"method": r.Method + "-response",
-				"path":   r.URL.Path,
-				"body":   rw.body.String(),
-			}).Info()
+			logger.With(zap.String("method", r.Method+"-response"), zap.String("path", r.URL.Path)).
+				Info("Successful response", zap.String("body", rw.body.String()))
 		} else {
-			logrus.WithFields(logrus.Fields{
-				"method": r.Method + "-response",
-				"path":   r.URL.Path,
-				"body":   rw.body.String(),
-			}).Error()
+			logger.With(zap.String("method", r.Method+"-response"), zap.String("path", r.URL.Path)).
+				Error("Error response", zap.String("body", rw.body.String()))
 		}
 	})
 }
@@ -125,34 +153,23 @@ func extractIDFromURL(path string) string {
 
 // Function to set up the router and define endpoints
 func SetupRouter() http.Handler {
-	// Get the current date for naming the log file
-	currentTime := time.Now()
-	formattedDate := currentTime.Format("02-01-2006") // Format: day-month-year
+	// Initialize the logger
+	initLogger()
 
-	// Configure the logger to write to both console and file
-	multiWriter := io.MultiWriter(
-		os.Stdout, // Log to the terminal
-		&lumberjack.Logger{
-			Filename: "logs/" + formattedDate + ".log", // Log file named by date
-			MaxSize:  10,                               // Maximum file size (MB)
-			MaxAge:   7,                                // Retain logs for 7 days
-		},
-	)
+	// Create a new ServeMux instance to avoid global route conflicts
+	mux := http.NewServeMux()
 
-	// Set up Logrus with the configured logger
-	logrus.SetOutput(multiWriter)                // Log to both console and file
-	logrus.SetFormatter(&logrus.JSONFormatter{}) // Use JSON format for structured logging
-
-	// Define the API routes (endpoints)
-	http.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
+	// Register routes
+	h := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			controllers.GetAllTasks(w, r)
 		} else if r.Method == http.MethodPost {
 			controllers.CreateNewTask(w, r)
 		}
-	})
+	}
+	mux.HandleFunc("/tasks", h)
 
-	http.HandleFunc("/tasks/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/tasks/", func(w http.ResponseWriter, r *http.Request) {
 		id := extractIDFromURL(r.URL.Path)
 
 		if id == "" {
@@ -171,7 +188,7 @@ func SetupRouter() http.Handler {
 		}
 	})
 
-	handler := LoggingRequestMiddleware(LoggingResponseMiddleware(RecoveryMiddleware(http.DefaultServeMux)))
+	handler := LoggingRequestMiddleware(LoggingResponseMiddleware(RecoveryMiddleware(mux)))
 	// Return the configured router
 	return handler
 }
