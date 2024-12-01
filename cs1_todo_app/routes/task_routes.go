@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"CS1_ToDoApp/controllers" // Import the application logic (controllers)
 	"bytes"
+	"cs1_todo_app/controllers"        // Import the application logic (controllers)
 	"encoding/json"                   // Handle JSON data
 	"github.com/natefinch/lumberjack" // Manage log files
 	"go.uber.org/zap"
@@ -160,13 +160,14 @@ func SetupRouter() http.Handler {
 	mux := http.NewServeMux()
 
 	// Register routes
-	mux.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
+	h := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			controllers.GetAllTasks(w, r)
 		} else if r.Method == http.MethodPost {
 			controllers.CreateNewTask(w, r)
 		}
-	})
+	}
+	mux.HandleFunc("/tasks", h)
 
 	mux.HandleFunc("/tasks/", func(w http.ResponseWriter, r *http.Request) {
 		id := extractIDFromURL(r.URL.Path)
