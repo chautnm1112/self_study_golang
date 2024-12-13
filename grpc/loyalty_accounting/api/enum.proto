@@ -1,0 +1,22 @@
+syntax = "proto3";
+package api;
+option go_package = "loyalty_accounting/api";
+
+enum OwnerType {
+  NETWORK = 0;
+  MERCHANT = 1;
+  MEMBER = 2;
+}
+
+enum AccountType {
+  TOTAL = 0;
+  NETWORK_PROMOTION = 1;
+  NETWORK_REVOKE = 2;
+}
+
+enum TransactionType {
+  EARN_POINTS = 0;
+  REDEEM_POINTS = 1;
+  REFUND_EARNED_POINTS = 2;
+  REFUND_REDEEMED_POINTS = 3;
+}
