@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package api;
+option go_package = "loyalty_core/api";
+import "api/enum.proto";
+
+service LoyaltyAccountingService {
+  rpc CreateAccount (CreateAccountRequest) returns (CreateAccountResponse);
+  rpc CreateTransaction (CreateTransactionRequest) returns (CreateTransactionResponse);
+  rpc UpdateAccount (UpdateAccountRequest) returns (UpdateAccountResponse);
+  rpc EarnPoints (EarnPointsRequest) returns (EarnPointsResponse);
+  rpc RedeemPoints (RedeemPointsRequest) returns (RedeemPointsResponse);
+  rpc RefundEarnedPoints (RefundEarnedPointsRequest) returns (RefundEarnedPointsResponse);
+  rpc RefundRedeemPoints (RefundRedeemPointsRequest) returns (RefundRedeemPointsResponse);
+}
+
+service LoyaltyCoreService {
+  rpc CreateNetwork (CreateNetworkRequest) returns (CreateNetworkResponse);
+  rpc CreateMember (CreateMemberRequest) returns (CreateMemberResponse);
+  rpc CreateMerchant (CreateMerchantRequest) returns (CreateMerchantResponse);
+}
+
+message CreateAccountRequest {
+  OwnerType owner_type = 1;
+  uint32 owner_id = 2;
+  uint32 point = 3;
+  AccountType type = 4;
+}
+
+message CreateAccountResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 account_id = 1;
+  }
+}
+
+message UpdateAccountRequest {
+  OwnerType owner_type = 1;
+  uint32 owner_id = 2;
+  uint32 point = 3;
+  AccountType type = 4;
+}
+
+message UpdateAccountResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 account_id = 1;
+  }
+}
+
+message CreateTransactionRequest {
+  uint32 from_account_id = 1;
+  uint32 to_account_id = 2;
+  uint32 point = 3;
+  TransactionType type = 4;
+}
+
+message CreateTransactionResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 transaction_id = 1;
+  }
+}
+
+message CreateNetworkRequest {
+  string name = 1;
+  uint32 initial_points = 2;
+}
+
+message CreateNetworkResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 network_id = 1;
+  }
+}
+
+message CreateMerchantRequest {
+  string name = 1;
+  uint32 network_id = 2;
+  uint32 initial_points = 3;
+}
+
+message CreateMerchantResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 merchant_id = 1;
+  }
+}
+
+message CreateMemberRequest {
+  string name = 1;
+  string email = 2;
+  string phone = 3;
+  uint32 network_id = 4;
+}
+
+message CreateMemberResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 member_id = 1;
+  }
+}
+
+message EarnPointsRequest {
+  uint32 member_account_id = 1;
+  uint32 merchant_account_id = 2;
+  uint32 points = 3;
+}
+
+message EarnPointsResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 transaction_id = 1;
+  }
+}
+
+message RedeemPointsRequest {
+  uint32 member_account_id = 1;
+  uint32 network_account_id = 2;
+  uint32 points = 3;
+}
+
+message RedeemPointsResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 transaction_id = 1;
+  }
+}
+
+message RefundEarnedPointsRequest {
+  uint32 member_account_id = 1;
+  uint32 merchant_account_id = 2;
+  uint32 network_account_id = 3;
+  uint32 points = 4;
+}
+
+message RefundEarnedPointsResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 transaction_id = 1;
+  }
+}
+
+message RefundRedeemPointsRequest {
+  uint32 member_account_id = 1;
+  uint32 merchant_account_id = 2;
+  uint32 points = 3;
+}
+
+message RefundRedeemPointsResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+  message Data {
+    uint32 transaction_id = 1;
+  }
+}
