@@ -1,7 +1,6 @@
 syntax = "proto3";
 package api;
 option go_package = "loyalty_core/api";
-import "api/enum.proto";
 
 message Network {
   uint32 id = 1;
@@ -26,23 +25,4 @@ message Member {
   uint32 network_id = 5;
   string created_at = 6;
   string updated_at = 7;
-}
-
-message Account {
-  uint32 id = 1;
-  OwnerType owner_type = 2;
-  uint32 owner_id = 3;
-  uint32 points = 4;
-  AccountType type = 5;
-  string created_at = 6;
-  string updated_at = 7;
-}
-
-message Transaction {
-  uint32 id = 1;
-  uint32 from_account_id = 2;
-  uint32 to_account_id = 3;
-  uint32 points = 4;
-  TransactionType type = 5;
-  string created_at = 6;
 }
