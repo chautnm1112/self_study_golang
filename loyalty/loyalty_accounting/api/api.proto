@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package api;
 option go_package = "loyalty_accounting/api";
-import "api/enum.proto";
+import "loyalty_accounting/api/enum.proto";
 
 service LoyaltyAccountingService {
   rpc CreateAccount (CreateAccountRequest) returns (CreateAccountResponse);

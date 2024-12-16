@@ -1,19 +1,23 @@
 package main
 
 import (
-	"context"
 	_ "context"
 	"flag"
 	"fmt"
+	"github.com/chautnm1112/loyalty/loyalty_accounting/api"
+	apiLoyalty "github.com/chautnm1112/loyalty/loyalty_core/api"
+	"github.com/chautnm1112/loyalty/loyalty_core/internal/config"
+	"github.com/chautnm1112/loyalty/loyalty_core/internal/model"
+	service "github.com/chautnm1112/loyalty/loyalty_core/internal/service"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"loyalty_core/internal/config"
-	"loyalty_core/internal/model"
-	service "loyalty_core/internal/service"
-	"time"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	_ "time"
 )
 
@@ -48,7 +52,7 @@ func serverAction(cfg *config.Config) error {
 	}
 	defer conn.Close()
 
-	client := NewLoyaltyAccountingServiceClient(conn)
+	client := api.NewLoyaltyAccountingServiceClient(conn)
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", cfg.DbHost, cfg.Username, cfg.Password, cfg.DBName)
 
@@ -63,29 +67,35 @@ func serverAction(cfg *config.Config) error {
 
 	_, _ = service.NewService(logger, db, client)
 
-	logger.Info("cfg: " + cfg.Host)
-	logger.Info("cfg: " + cfg.DBName)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	request := &CreateTransactionRequest{
-		FromAccountId: 1,
-		ToAccountId:   2,
-		Point:         2000,
-		Type:          TransactionType_REFUND_REDEEMED_POINTS,
-	}
-	//request := &api.EarnPointsRequest{
-	//	Points:            1200,
-	//	MemberAccountId:   1,
-	//	MerchantAccountId: 2,
-	//}
-	//_, err = client.EarnPoints(ctx, request)
-	_, err = client.CreateTransaction(ctx, request)
+	service, err := service.NewService(logger, db, client)
 	if err != nil {
-		logger.Fatal("Failed to add points", zap.Error(err))
-		return nil
+		return fmt.Errorf("failed to create service: %w", err)
 	}
-	logger.Info("Create Transaction success")
+
+	lis, err := net.Listen("tcp", ":"+cfg.Host)
+	if err != nil {
+		return fmt.Errorf("failed to listen on port %s: %w", cfg.Host, err)
+	}
+
+	grpcServer := grpc.NewServer()
+	apiLoyalty.RegisterLoyaltyCoreServiceServer(grpcServer, service)
+
+	go func() {
+		logger.Info("gRPC server is running on port " + cfg.Host)
+		if err := grpcServer.Serve(lis); err != nil {
+			logger.Fatal("Failed to serve gRPC server", zap.Error(err))
+		}
+	}()
+
+	stopCh := make(chan os.Signal, 1)
+	signal.Notify(stopCh, syscall.SIGINT, syscall.SIGTERM)
+	<-stopCh
+
+	gracefulShutdown(grpcServer)
 	return nil
+}
+func gracefulShutdown(grpcServer *grpc.Server) {
+	logger.Info("Shutting down gRPC server gracefully...")
+	grpcServer.GracefulStop()
+	logger.Info("Server stopped gracefully")
 }
